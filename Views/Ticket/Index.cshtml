@@ -5,17 +5,21 @@
 }
 
 <div class="container mt-5">
+    @* Başlık ve Yeni Talep Butonu *@
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold text-dark"><i class="fa-solid fa-ticket"></i> Destek Taleplerim</h2>
-        <a href="/Ticket/Create" class="btn btn-primary fw-bold shadow-sm"><i class="fa-solid fa-plus"></i> Yeni Talep Aç</a>
+        <h2 class="fw-bold text-dark"><i class="fa-solid fa-ticket text-primary"></i> Destek Taleplerim</h2>
+        <a href="/Ticket/Create" class="btn btn-primary fw-bold shadow-sm px-4 py-2">
+            <i class="fa-solid fa-plus-circle me-2"></i> Yeni Talep Aç
+        </a>
     </div>
 
+    @* Talep Listesi Kartı *@
     <div class="card shadow-lg border-0 rounded-4">
         <div class="card-body p-0">
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th class="ps-4">No</th>
+                        <th class="ps-4 py-3">No</th>
                         <th>Başlık</th>
                         <th>Tarih</th>
                         <th>Aciliyet</th>
@@ -33,47 +37,49 @@
                                 <td class="fw-bold">@item.Title</td>
                                 <td class="text-muted">@item.CreatedAt.ToString("dd.MM.yyyy HH:mm")</td>
                                 <td>
-                                    @if (item.Priority == TicketPriority.Düşük)
+                                    @* ACİLİYET KODLARI (PriorityId) *@
+                                    @if (item.PriorityId == 1)
                                     {
                                         <span class="badge bg-info text-dark">Düşük</span>
                                     }
-                                    else if (item.Priority == TicketPriority.Normal)
+                                    else if (item.PriorityId == 2)
                                     {
 
                                         <span class="badge bg-primary">Normal</span>
                                     }
-                                    else if (item.Priority == TicketPriority.Yüksek)
-                                    {
-
-                                        <span class="badge bg-warning text-dark">Yüksek</span>
-                                    }
-                                    else if (item.Priority == TicketPriority.Kritik)
+                                    else if (item.PriorityId == 3)
                                     {
 
                                         <span class="badge bg-danger shadow-sm">KRİTİK</span>
                                     }
                                 </td>
                                 <td>
-                                    @if (item.Status == TicketStatus.Açık)
+                                    @* DURUM KODLARI (StatusId) *@
+                                    @if (item.StatusId == 1)
                                     {
                                         <span class="badge bg-success">Açık</span>
                                     }
-                                    else if (item.Status == TicketStatus.İşlemde)
+                                    else if (item.StatusId == 2)
                                     {
 
                                         <span class="badge bg-warning text-dark">İşlemde</span>
                                     }
-                                    else
+                                    else if (item.StatusId == 3)
                                     {
 
                                         <span class="badge bg-secondary">Kapalı</span>
                                     }
                                 </td>
                                 <td class="text-end pe-4">
-                                    <a href="/Ticket/Details/@item.Id" class="btn btn-sm btn-info text-white shadow-sm me-1">Detay</a>
-                                    @if (item.Status != TicketStatus.Kapalı)
+                                    <a href="/Ticket/Details/@item.Id" class="btn btn-sm btn-info text-white shadow-sm me-1 px-3">
+                                        <i class="fa-solid fa-magnifying-glass"></i> Detay
+                                    </a>
+                                    
+                                    @if (item.StatusId != 3) @* Bilet kapalı değilse *@
                                     {
-                                        <a href="/Ticket/CloseTicket/@item.Id" class="btn btn-sm btn-secondary shadow-sm">Kapat</a>
+                                        <a href="/Ticket/CloseTicket/@item.Id" class="btn btn-sm btn-outline-secondary shadow-sm px-3">
+                                            <i class="fa-solid fa-xmark"></i> Kapat
+                                        </a>
                                     }
                                 </td>
                             </tr>
@@ -81,7 +87,12 @@
                     }
                     else
                     {
-                        <tr><td colspan="6" class="text-center py-4 text-muted">Henüz hiç destek talebi açmadınız.</td></tr>
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="fa-regular fa-folder-open fa-3x mb-3 d-block opacity-50"></i>
+                                Henüz hiç destek talebi açmadınız.
+                            </td>
+                        </tr>
                     }
                 </tbody>
             </table>
@@ -89,12 +100,19 @@
     </div>
 </div>
 
+@* SweetAlert Bildirimleri *@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-@if (TempData["Success"] != null)
+@if (TempData["SuccessMessage"] != null || TempData["Success"] != null)
 {
+    var message = TempData["SuccessMessage"] ?? TempData["Success"];
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-        Swal.fire({ title: 'Başarılı!', text: '@Html.Raw(TempData["Success"])', icon: 'success', confirmButtonColor: '#2c5364' });
+        document.addEventListener('DOMContentLoaded', function() {
+        Swal.fire({
+        title: 'Başarılı!',
+        text: '@Html.Raw(message)',
+        icon: 'success',
+        confirmButtonColor: '#2c5364'
+        });
         });
     </script>
 }

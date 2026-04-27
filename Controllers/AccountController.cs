@@ -1,11 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Security.Claims;
 using IT_Destek_Panel.Models;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Collections.Generic;
+using IT_Destek_Panel.Helpers;
+using Microsoft.EntityFrameworkCore;
 
 namespace IT_Destek_Panel.Controllers
 {
@@ -24,33 +23,27 @@ namespace IT_Destek_Panel.Controllers
         [HttpPost]
         public async Task<IActionResult> Login(string username, string password)
         {
-            // 1. Gelen düz şifreyi kriptolayıp Hash'e çeviriyoruz
-            string hashedPassword = IT_Destek_Panel.Helpers.SecurityHelper.HashPassword(password);
-
-            // 2. Artık veritabanında "password" ile değil, "hashedPassword" ile arama yapıyoruz
-            var user = _context.Users.FirstOrDefault(u => u.Username == username && u.Password == hashedPassword && u.IsDeleted == false);
+            // 1. Önce kullanıcıyı adına göre buluyoruz 
+            var user = _context.Users.FirstOrDefault(u => u.Username == username && u.IsDeleted == false);
 
             if (user != null)
             {
-                var claims = new List<Claim>
-                {
-                    new Claim(ClaimTypes.Name, user.Username),
-                    new Claim("UserId", user.Id.ToString()),
-                    // Enum'ı ToString() ile metne çevirip çereze atıyoruz
-                    new Claim(ClaimTypes.Role, user.Role.ToString())
-                };
+                string inputHashed = SecurityHelper.HashPassword(password, user.PasswordSalt);
 
-                var claimsIdentity = new ClaimsIdentity(claims, "CookieAuth");
-                await HttpContext.SignInAsync("CookieAuth", new ClaimsPrincipal(claimsIdentity));
+                // 2. Veritabanındaki şifreyle eşleşiyor mu?
+                if (user.Password == inputHashed)
+                {
+                    var claims = new List<Claim>
+                    {
+                        new Claim(ClaimTypes.Name, user.Username),
+                        new Claim("UserId", user.Id.ToString()),
+                        new Claim(ClaimTypes.Role, user.Role.ToString())
+                    };
 
-                // EĞER GİREN ADMİN İSE DİREKT YÖNETİM PANELİNE AT
-                if (user.Role == IT_Destek_Panel.Models.UserRole.Admin)
-                {
-                    return RedirectToAction("Index", "Admin");
-                }
-                // EĞER ÖĞRENCİYSE KENDİ SAYFASINA AT
-                else
-                {
+                    var claimsIdentity = new ClaimsIdentity(claims, "CookieAuth");
+                    await HttpContext.SignInAsync("CookieAuth", new ClaimsPrincipal(claimsIdentity));
+
+                    if (user.Role == UserRole.Admin) return RedirectToAction("Index", "Admin");
                     return RedirectToAction("Index", "Ticket");
                 }
             }
@@ -65,18 +58,30 @@ namespace IT_Destek_Panel.Controllers
         [HttpPost]
         public IActionResult Register(string username, string password)
         {
-            if (_context.Users.Any(u => u.Username == username))
+            // --- MİNİMUM 6, MAKSİMUM 20 KARAKTER KONTROLÜ ---
+            if (password.Length < 6 || password.Length > 20)
             {
-                ViewBag.Error = "Bu kullanıcı adı zaten alınmış.";
+                ViewBag.Error = "Şifreniz en az 6, en fazla 20 karakter uzunluğunda olmalıdır!";
                 return View();
             }
+
+            // Kullanıcı adı zaten var mı kontrolü
+            if (_context.Users.Any(u => u.Username == username))
+            {
+                ViewBag.Error = "Bu kullanıcı adı sistemde zaten tanımlı.";
+                return View();
+            }
+
+            // DİNAMİK ŞİFRELEME ADIMLARI:
+            string salt = SecurityHelper.GenerateSalt(); // Rastgele tuz üret
+            string hashedPass = SecurityHelper.HashPassword(password, salt); // Tuzlu şifre üret
 
             var newUser = new User
             {
                 Username = username,
-                // İŞTE SİHİRLİ GÜVENLİK DOKUNUŞU: Düz şifreyi Hash'liyoruz!
-                Password = IT_Destek_Panel.Helpers.SecurityHelper.HashPassword(password),
-                Role = UserRole.User, // Artık "User" değil Enum kullanıyoruz
+                Password = hashedPass,
+                PasswordSalt = salt, // Tuzu saklıyoruz
+                Role = UserRole.User,
                 IsDeleted = false
             };
 
@@ -91,19 +96,17 @@ namespace IT_Destek_Panel.Controllers
             await HttpContext.SignOutAsync("CookieAuth");
             return RedirectToAction("Login");
         }
-    
-    // 404 Hata Sayfasına Yönlendiren Metot
-public IActionResult NotFoundPage()
+
+        public IActionResult NotFoundPage()
         {
-            Response.StatusCode = 404; // Tarayıcıya ve Google'a "Bu sayfa yok" diyoruz
+            Response.StatusCode = 404;
             return View();
         }
+
         [HttpGet]
         public IActionResult LoadWeather(string city, string lat, string lon)
         {
-            // JavaScript'ten gelen verileri ViewComponent'a yolluyoruz
             return ViewComponent("WeatherWidget", new { city = city, lat = lat, lon = lon });
         }
     }
-
 }

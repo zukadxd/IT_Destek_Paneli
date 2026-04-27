@@ -1,29 +1,32 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace IT_Destek_Panel.Models
 {
-    // ENUM TANIMLAMALARI
-    public enum TicketPriority { Düşük = 1, Normal = 2, Yüksek = 3, Kritik = 4 }
-    public enum TicketStatus { Açık = 1, İşlemde = 2, Kapalı = 3 }
-
     public class Ticket
     {
         public int Id { get; set; }
-        public string Title { get; set; }
-        public string Description { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
 
-        // Artık string değil, Enum kullanıyoruz
-        public TicketStatus Status { get; set; } = TicketStatus.Açık;
-        public TicketPriority Priority { get; set; } = TicketPriority.Normal;
+        //DURUM VE ACİLİYET BAĞLANTILARI
+        public int StatusId { get; set; }
+        public virtual TicketStatus? Status { get; set; }
 
-        public string? AttachmentPath { get; set; }
+        public int PriorityId { get; set; }
+        public virtual TicketPriority? Priority { get; set; }
 
-        //  RESİM YÜKLENME TARİHİ
-        public DateTime? AttachmentDate { get; set; }
-
+        //KULLANICI BİLGİLERİ 
         public int UserId { get; set; }
+        public virtual User? User { get; set; }
+
+        //TARİH VE EKSTRALAR
         public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public string? AttachmentPath { get; set; }
+        public DateTime? AttachmentDate { get; set; }
         public bool IsDeleted { get; set; } = false;
-        public User User { get; set; }
+
+        // İlişki: Bir bilete ait birden fazla mesaj (sohbet) olabilir
+        public virtual ICollection<TicketMessage>? Messages { get; set; }
     }
 }

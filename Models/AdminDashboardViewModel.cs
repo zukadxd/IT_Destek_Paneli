@@ -4,7 +4,7 @@ namespace IT_Destek_Panel.Models
 {
     public class AdminDashboardViewModel
     {
-        public List<Ticket> Tickets { get; set; }
+        public List<Ticket> Tickets { get; set; } = new();
         public int TotalTickets { get; set; }
         public int OpenTickets { get; set; }
         public int InProgressTickets { get; set; }

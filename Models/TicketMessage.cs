@@ -6,16 +6,15 @@ namespace IT_Destek_Panel.Models
     {
         public int Id { get; set; }
         public int TicketId { get; set; }
+        public virtual Ticket? Ticket { get; set; }
+
         public int UserId { get; set; }
-        public string MessageBody { get; set; }
+        public virtual User? User { get; set; }
+
+        public string MessageBody { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
-        // OKUNDU BİLGİSİ
         public bool IsRead { get; set; } = false;
-
         public bool IsDeleted { get; set; } = false;
-
-        public Ticket Ticket { get; set; }
-        public User User { get; set; }
     }
 }
