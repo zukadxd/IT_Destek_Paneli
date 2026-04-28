@@ -103,7 +103,7 @@ namespace IT_Destek_Panel.Controllers
                 Title = title,
                 Description = description,
                 PriorityId = priorityId,
-                StatusId = 1,
+                StatusId = (int)TicketStatusEnum.Acik, // 💎 ENUM BURAYA EKLENDİ (1 yerine)
                 UserId = userId,
                 CreatedAt = DateTime.Now,
                 AttachmentPath = filePath,
@@ -185,12 +185,13 @@ namespace IT_Destek_Panel.Controllers
             if (role == "Admin" || role == "2")
             {
                 if (newStatusId.HasValue) ticket.StatusId = newStatusId.Value;
-                else if (ticket.StatusId == 1 && !string.IsNullOrWhiteSpace(newMessage)) ticket.StatusId = 2;
+                // 💎 ENUM BURAYA EKLENDİ (1 ve 2 yerine)
+                else if (ticket.StatusId == (int)TicketStatusEnum.Acik && !string.IsNullOrWhiteSpace(newMessage)) ticket.StatusId = (int)TicketStatusEnum.Islemde;
             }
 
             await _context.SaveChangesAsync();
 
-            // SİNYALİ ÇAKIYORUZ: Sayfa yenilenmeden karşıya gitsin
+            //  Sayfa yenilenmeden karşıya gitsin
             if (!string.IsNullOrWhiteSpace(newMessage))
             {
                 await _hubContext.Clients.Group(ticketId.ToString()).SendAsync("ReceiveMessage",
@@ -212,7 +213,7 @@ namespace IT_Destek_Panel.Controllers
 
             if (ticket != null)
             {
-                ticket.StatusId = 3;
+                ticket.StatusId = (int)TicketStatusEnum.Kapali; // 💎 ENUM BURAYA EKLENDİ (3 yerine)
                 _context.SaveChanges();
                 TempData["SuccessMessage"] = "Bilet başarıyla kapatıldı.";
             }
